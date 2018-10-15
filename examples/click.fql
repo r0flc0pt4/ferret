@@ -1,0 +1,9 @@
+LET doc = DOCUMENT("https://github.com/", true)
+LET btn = ELEMENT(doc, ".HeaderMenu a")
+
+CLICK(btn)
+WAIT_NAVIGATION(doc)
+WAIT_ELEMENT(doc, '.IconNav')
+
+FOR el IN ELEMENTS(doc, '.IconNav a')
+    RETURN TRIM(el.innerText)

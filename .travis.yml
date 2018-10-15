@@ -1,0 +1,57 @@
+language: go
+
+sudo: required
+
+os:
+- linux
+
+go:
+- "1.10"
+- "1.11"
+- master
+
+addons:
+  apt:
+    packages:
+    - oracle-java8-set-default
+  chrome: stable
+
+before_install:
+- curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+- go get -u github.com/mgechev/revive
+- sudo curl -o /usr/local/lib/antlr-4.7.1-complete.jar https://www.antlr.org/download/antlr-4.7.1-complete.jar
+- export CLASSPATH=".:/usr/local/lib/antlr-4.7.1-complete.jar:$CLASSPATH"
+- mkdir $HOME/travis-bin
+- echo -e '#!/bin/bash\njava -jar /usr/local/lib/antlr-4.7.1-complete.jar "$@"' > $HOME/travis-bin/antlr4
+- echo -e '#!/bin/bash\njava org.antlr.v4.gui.TestRig "$@"' > $HOME/travis-bin/grun
+- chmod +x $HOME/travis-bin/*
+- export PATH=$PATH:$HOME/travis-bin
+
+install:
+- make install
+
+stages:
+- lint
+- compile
+- test
+- e2e
+
+jobs:
+  include:
+  - stage: lint
+    script:
+    - make vet
+    - make lint
+  - stage: compile
+    script:
+    - make generate
+    - make compile
+  - stage: test
+    script: make test
+  - stage: e2e
+    script:
+    - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 --disable-setuid-sandbox --no-sandbox about:blank &
+    - make e2e
+
+after_script:
+- killall google-chrome-stable
